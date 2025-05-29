@@ -358,7 +358,7 @@ EndDeviceStatus::AddMACCommand(Ptr<MacCommand> macCommand)
 bool
 EndDeviceStatus::HasReceiveWindowOpportunityScheduled()
 {
-    return m_receiveWindowEvent.IsPending();
+    return !m_receiveWindowEvent.IsExpired();
 }
 
 void

@@ -91,7 +91,7 @@ EndDeviceLorawanMac::GetTypeId()
             .AddAttribute("MType",
                           "Specify type of message will be sent by this end device.",
                           EnumValue(LorawanMacHeader::UNCONFIRMED_DATA_UP),
-                          MakeEnumAccessor<LorawanMacHeader::MType>(&EndDeviceLorawanMac::m_mType),
+                          MakeEnumAccessor(&EndDeviceLorawanMac::m_mType),
                           MakeEnumChecker(LorawanMacHeader::UNCONFIRMED_DATA_UP,
                                           "Unconfirmed",
                                           LorawanMacHeader::CONFIRMED_DATA_UP,

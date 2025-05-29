@@ -48,7 +48,7 @@ TypeId myAdrComponent::GetTypeId (void)
     .AddAttribute ("MultipleGwCombiningMethod",
                    "Whether to average the received power of gateways or to use the maximum",
                    EnumValue (myAdrComponent::MAXIMUM), //AVERAGE AVERAGE
-		   MakeEnumAccessor<myAdrComponent::CombiningMethod> (&myAdrComponent::tpAveraging),
+		   MakeEnumAccessor(&myAdrComponent::tpAveraging),
                    MakeEnumChecker (myAdrComponent::AVERAGE,
                                     "avg",
                                     myAdrComponent::MAXIMUM,
@@ -58,7 +58,7 @@ TypeId myAdrComponent::GetTypeId (void)
     .AddAttribute ("MultiplePacketsCombiningMethod",
                    "Whether to average SNRs from multiple packets or to use the maximum",
                    EnumValue (myAdrComponent::MAXIMUM), //AVERAGE
-                   MakeEnumAccessor<myAdrComponent::CombiningMethod> (&myAdrComponent::historyAveraging),
+                   MakeEnumAccessor(&myAdrComponent::historyAveraging),
                    MakeEnumChecker (myAdrComponent::AVERAGE,
                                     "avg",
                                     myAdrComponent::MAXIMUM,
