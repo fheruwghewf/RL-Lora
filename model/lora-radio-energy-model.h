@@ -45,7 +45,7 @@
     *
     * \param callback Change state callback.
     */
-   void SetChangeStateCallback (energy::DeviceEnergyModel::ChangeStateCallback callback);
+   void SetChangeStateCallback (DeviceEnergyModel::ChangeStateCallback callback);
  
    /**
     * \brief Sets the update tx current callback.
@@ -95,7 +95,7 @@
     * Change state callback used to notify the LoraRadioEnergyModel of a state
     * change.
     */
-   energy::DeviceEnergyModel::ChangeStateCallback m_changeStateCallback;
+   DeviceEnergyModel::ChangeStateCallback m_changeStateCallback;
  
    /**
     * Callback used to update the tx current stored in LoraRadioEnergyModel based on
@@ -125,7 +125,7 @@
   * Then the EnergySource object uses the total current to calculate energy.
   *
   */
- class LoraRadioEnergyModel : public energy::DeviceEnergyModel
+ class LoraRadioEnergyModel : public DeviceEnergyModel
  {
  public:
    /**
@@ -153,7 +153,7 @@
     *
     * Implements DeviceEnergyModel::SetEnergySource.
     */
-   void SetEnergySource (Ptr<energy::EnergySource> source);
+   void SetEnergySource (Ptr<EnergySource> source);
  
    /**
     * \returns Total energy consumption of the wifi device.
@@ -300,7 +300,7 @@
     */
    void SetLoraRadioState (const EndDeviceLoraPhy::State state);
  
-   Ptr<energy::EnergySource> m_source; ///< energy source
+   Ptr<EnergySource> m_source; ///< energy source
  
    // Member variables for current draw in different radio modes.
    double m_txCurrentA; ///< transmit current
