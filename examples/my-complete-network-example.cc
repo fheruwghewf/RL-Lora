@@ -52,6 +52,7 @@
  #include "ns3/my-adr-component.h"
 #include <ns3/three-gpp-propagation-loss-model.h>
 
+// #include <Python.h>
 
 //****tests
 
@@ -114,7 +115,7 @@ void SaveQ (double **Q)
 {
 
 		std::ofstream myfile;
-		myfile.open ("/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/rladr-lorans3/automation-interface/array.txt");
+		myfile.open ("/home/ubuntu/zxq/NS3-LoraRL/rladr-lorans3/automation-interface/array.txt");
       std::cout<<"创建并打开array.txt"<<std::endl;
 	      for(int i = 0; i < (1344);i++)
 		  {
@@ -137,8 +138,8 @@ void SaveQ (double **Q)
 //// Loads array.txt file from disk to continue feeding the Q matrix
 void LoadQ(double **Q)
 {
-
-	    std::ifstream file("/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/rladr-lorans3/automation-interface/array.txt");
+      NS_LOG_FUNCTION_NOARGS();
+	    std::ifstream file("/home/ubuntu/zxq/NS3-LoraRL/rladr-lorans3/automation-interface/array.txt");
 	    if(file.is_open())
 	    {
         std::cout<<"打开array.txt"<<std::endl;
@@ -186,7 +187,8 @@ void LoadQ(double **Q)
 int
 main (int argc, char *argv[])
 {
-
+  // Py_SetPythonHome(L"/home/ubuntu/anaconda3/envs/dl");
+  // Py_Initialize();
 
   CommandLine cmd;
   bool enableCRDSA = false;
@@ -313,7 +315,7 @@ main (int argc, char *argv[])
   //***tests start
  
   std::fstream nds;
-   nds.open("/home/ubuntu/ns-allinone-3.37/ns-3.37/contrib/RL-Lora/NS3-LoraRL/movingGateway/CPLEX/nodes.csv",std::ios::in);
+   nds.open("/home/ubuntu/zxq/NS3-LoraRL/movingGateway/CPLEX/nodes.csv",std::ios::in);
    //nds.open("/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/movingGateway/CPLEX/nodes.csv",std::ios::in);
 ////"/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/rladr-lorans3/automation-interface/nodes.csv"
   std::cerr<<"ndevice= "<<nDevices<<std::endl;
@@ -542,7 +544,7 @@ for (uint32_t i = 0; i < gateways.GetN(); ++i) {
   if (print)
     {
       std::ofstream myfile;
-      myfile.open ("/home/ubuntu/ns-allinone-3.37/ns-3.37/contrib/RL-Lora/NS3-LoraRL/rladr-lorans3/automation-interface/buildings.txt");
+      myfile.open ("/home/ubuntu/zxq/NS3-LoraRL/rladr-lorans3/automation-interface/buildings.txt");
       if (myfile.is_open())
    {
       std::cerr << "可以打开buildings.txt文件" << std::endl;
@@ -645,11 +647,11 @@ for (uint32_t i = 0; i < gateways.GetN(); ++i) {
                                        "TxCurrent", DoubleValue (0.028));
 
   // install source on EDs' nodes
-  energy::EnergySourceContainer sources = basicSourceHelper.Install (endDevices);
+  EnergySourceContainer sources = basicSourceHelper.Install (endDevices);
   Names::Add ("/Names/EnergySource", sources.Get (0));
 
   // install device model
-  energy::DeviceEnergyModelContainer deviceModels = radioEnergyHelper.Install(EndNetDevices, sources);
+  DeviceEnergyModelContainer deviceModels = radioEnergyHelper.Install(EndNetDevices, sources);
 
   ////////////////
   // Simulation //
@@ -699,5 +701,6 @@ for (uint32_t i = 0; i < gateways.GetN(); ++i) {
   ///***tests
   //PrintNodes(nDevices);
   ///***tests
+  // Py_FinalizeEx();
   return 0;
 }

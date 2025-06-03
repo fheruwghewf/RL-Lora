@@ -47,7 +47,7 @@ TypeId myAdrComponent::GetTypeId (void)
     .SetParent<NetworkControllerComponent> ()
     .AddAttribute ("MultipleGwCombiningMethod",
                    "Whether to average the received power of gateways or to use the maximum",
-                   EnumValue (myAdrComponent::MAXIMUM), //AVERAGE AVERAGE
+                   EnumValue (myAdrComponent::AVERAGE), //AVERAGE AVERAGE
 		   MakeEnumAccessor(&myAdrComponent::tpAveraging),
                    MakeEnumChecker (myAdrComponent::AVERAGE,
                                     "avg",
@@ -57,7 +57,7 @@ TypeId myAdrComponent::GetTypeId (void)
                                     "min"))
     .AddAttribute ("MultiplePacketsCombiningMethod",
                    "Whether to average SNRs from multiple packets or to use the maximum",
-                   EnumValue (myAdrComponent::MAXIMUM), //AVERAGE
+                   EnumValue (myAdrComponent::AVERAGE), //AVERAGE
                    MakeEnumAccessor(&myAdrComponent::historyAveraging),
                    MakeEnumChecker (myAdrComponent::AVERAGE,
                                     "avg",
@@ -76,6 +76,7 @@ TypeId myAdrComponent::GetTypeId (void)
                    MakeBooleanAccessor (&myAdrComponent::m_toggleTxPower),
                    MakeBooleanChecker ())
   ;
+   
   return tid;
 }
 
@@ -780,7 +781,7 @@ int myAdrComponent::ADRLR (int SF, int step)
 	std::string st = std::to_string(int(step));
 
 	//std::string cmd = "cd /home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/rladr-lorans3/lorawan/adr-rl && /usr/bin/python3 lora-game.py " + sf + " " + st;
-  std::string cmd = "cd /home/ubuntu/ns-allinone-3.37/ns-3.37/contrib/RL-Lora/NS3-LoraRL/adr-rl/lora-game.py " + sf + " " + st;
+  std::string cmd = "cd /home/ubuntu/zxq/NS3-LoraRL/adr-rl/lora-game.py " + sf + " " + st;
   
 	return system(cmd.c_str());
 	//std::cout << "saida "<< size<<std::endl;

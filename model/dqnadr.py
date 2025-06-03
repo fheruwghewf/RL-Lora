@@ -1,3 +1,6 @@
+import os
+
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import numpy as np
 from numpy import random as rnd
 import random
@@ -11,13 +14,12 @@ import torch.nn.functional as F
 from collections import deque
 from time import time
 from os import system
-import os
 
-MY_PATH="/home/ubuntu/ns-allinone-3.37/ns-3.37/contrib/RL-Lora/NS3-LoraRL/rladr-lorans3/automation-interface"
+MY_PATH="/home/ubuntu/zxq/NS3-LoraRL/rladr-lorans3/automation-interface"
 memory_path = os.path.join(MY_PATH, "memory-store")  # 正确拼接路径
 label_path = os.path.join(MY_PATH, "label-store")  # 正确拼接路径
 model_path = os.path.join(MY_PATH, "model-store")  # 正确拼接路径
-device = torch.device('cpu')
+device = torch.device('cuda')
 
 class DQN(nn.Module):
     def __init__(self, envstate_dim, action_dim):
@@ -70,7 +72,7 @@ class ReplayMemory:
 def decisionmaker(statein):
     print("This is the decisionmaker process ")
     if os.path.exists(model_path):
-        agent = torch.load(model_path,map_location=torch.device("cpu"), weights_only=False)
+        agent = torch.load(model_path,map_location=device, weights_only=False)
         print("open the decisionmaker model ")
     else:
         agent=DQN(1344,96)
@@ -78,7 +80,7 @@ def decisionmaker(statein):
         print("Is it the first round? Model not found!")
 
     if os.path.exists(label_path):
-        label = torch.load(label_path,map_location=torch.device("cpu"), weights_only=False)
+        label = torch.load(label_path,map_location=device, weights_only=False)
         print("open the decisionmaker label ")
 
     else:
@@ -134,14 +136,14 @@ def train(state1,state2,act1,reward):
   ######load label#######  
     if os.path.exists(model_path):
         print("yes?")
-        agent = torch.load(model_path, map_location=torch.device("cpu"),weights_only=False)
+        agent = torch.load(model_path, map_location=device,weights_only=False)
         print("open model-store")
     else:
         print("no agent-store")
         return 1
     
     if os.path.exists(label_path):
-        label = torch.load(label_path,map_location=torch.device("cpu"), weights_only=False)
+        label = torch.load(label_path,map_location=device, weights_only=False)
         print("open label-store")
     else:
         print("no label-model")
@@ -170,9 +172,9 @@ def train(state1,state2,act1,reward):
     agent.optimizer.step()    
     print("finish training")
    
-    torch.save(agent, "/home/ubuntu/ns-allinone-3.37/ns-3.37/contrib/RL-Lora/NS3-LoraRL/rladr-lorans3/automation-interface/model-store")
+    torch.save(agent, "/home/ubuntu/zxq/NS3-LoraRL/rladr-lorans3/automation-interface/model-store")
     #torch.save(agent.state_dict(), os.path.join(MY_PATH, "model-weights.pt"))
     print("model-store saved")
-    torch.save(label, "/home/ubuntu/ns-allinone-3.37/ns-3.37/contrib/RL-Lora/NS3-LoraRL/rladr-lorans3/automation-interface/label-store")
+    torch.save(label, "/home/ubuntu/zxq/NS3-LoraRL/rladr-lorans3/automation-interface/label-store")
     #torch.save(label.state_dict(), os.path.join(MY_PATH, "label-weights.pt"))
     print("label-store saved")

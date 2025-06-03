@@ -120,22 +120,10 @@ set(test_files
     test/network-server-test-suite.cc
 )
 
-# set(full_source_files "")
-# foreach(file ${source_files})
-#   list(APPEND full_source_files lorawan/${file})
-# endforeach()
+find_package(Python3 REQUIRED COMPONENTS Development)
+include_directories(${Python3_INCLUDE_DIRS})
+# # 在 target_link_libraries 中添加 Python3::Python
 
-# set(full_header_files "")
-# foreach(file ${header_files})
-#   list(APPEND full_header_files lorawan/${file})
-# endforeach()
-
-# set(full_test_files "")
-# foreach(file ${test_files})
-#   list(APPEND full_test_files lorawan/${file})
-# endforeach()
-
-# message(${full_source_files})
 
 build_lib(
   LIBNAME lorawan
@@ -152,15 +140,9 @@ build_lib(
   TEST_SOURCES ${test_files}
 )
 
-# add_library(lorawanlib SHARED ${source_files})
-# add_executable(lorawanapp ${source_files})
-# target_include_directories(lorawanlib PRIVATE ${header_files})
-# target_include_directories(lorawanapp PRIVATE ${header_files})
 
-find_package(Python3 REQUIRED COMPONENTS Development)
-include_directories(${Python3_INCLUDE_DIRS})
-# # 在 target_link_libraries 中添加 Python3::Python
+# message(${Python3_INCLUDE_DIRS})
+# message(${Python3_LIBRARIES})
 
-
-target_link_libraries(liblorawan PRIVATE Python3::Python)  # 使用现代 CMake 目标
-# target_link_libraries(lorawanapp, lorawanlib)
+# target_link_libraries(liblorawan PRIVATE Python3::Python)  # 使用现代 CMake 目标
+target_link_libraries(liblorawan PRIVATE ${Python3_LIBRARIES})

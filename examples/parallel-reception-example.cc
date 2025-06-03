@@ -115,7 +115,7 @@ main(int argc, char* argv[])
     // Create the LoraNetDevices of the end devices
     phyHelper.SetDeviceType(LoraPhyHelper::ED);
     macHelper.SetDeviceType(LorawanMacHelper::ED_A);
-    macHelper.SetRegion(LorawanMacHelper::SingleChannel);
+    macHelper.SetRegion(LorawanMacHelper::ALOHA);
     helper.Install(phyHelper, macHelper, endDevices);
 
     /*********************

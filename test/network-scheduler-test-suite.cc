@@ -72,7 +72,7 @@ NetworkSchedulerTestSuite::NetworkSchedulerTestSuite()
 {
     LogComponentEnable("NetworkSchedulerTestSuite", LOG_LEVEL_DEBUG);
     // TestDuration for TestCase can be QUICK, EXTENSIVE or TAKES_FOREVER
-    AddTestCase(new NetworkSchedulerTest, Duration::QUICK);
+    AddTestCase(new NetworkSchedulerTest, TestCase::QUICK);
 }
 
 // Do not forget to allocate an instance of this TestSuite

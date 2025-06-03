@@ -128,8 +128,8 @@ NetworkStatusTestSuite::NetworkStatusTestSuite()
 {
     LogComponentEnable("NetworkStatusTestSuite", LOG_LEVEL_DEBUG);
     // TestDuration for TestCase can be QUICK, EXTENSIVE or TAKES_FOREVER
-    AddTestCase(new EndDeviceStatusTest, Duration::QUICK);
-    AddTestCase(new NetworkStatusTest, Duration::QUICK);
+    AddTestCase(new EndDeviceStatusTest, TestCase::QUICK);
+    AddTestCase(new NetworkStatusTest, TestCase::QUICK);
 }
 
 // Do not forget to allocate an instance of this TestSuite
