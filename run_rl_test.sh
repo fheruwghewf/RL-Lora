@@ -2,7 +2,7 @@
 
 # 添加节点数量测试功能
 # NODE_COUNTS=(100 200 300 400 500 600 700)  # 要测试的不同节点数量
-NODE_COUNTS=(300 600 900 1200 1500 1800 2100 2400 2700 3000)  # 要测试的不同节点数量
+NODE_COUNTS=(1000 1500 2000 2500 3000)  # 要测试的不同节点数量
 source /etc/profile 
 
 ##### Defining some style formats
@@ -50,13 +50,13 @@ mkdir -p "$MAIN_OUTPUT_DIR"
 TRAIN_DIR="/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/rladr-lorans3/automation-interface"
 
 # rm -f $TRAIN_DIR/array.txt
-rm -f $TRAIN_DIR/model-store  #目标网络
-rm -f $TRAIN_DIR/label-store  #label store 价值网络
-rm -f $TRAIN_DIR/memory-store
+# rm -f $TRAIN_DIR/model-store  #目标网络
+# rm -f $TRAIN_DIR/label-store  #label store 价值网络
+# rm -f $TRAIN_DIR/memory-store
 
 # rm -rf "$TRAIN_DIR/performance-records"
-rm -rf "$TRAIN_DIR/temp-model-store"
-rm -rf "$TRAIN_DIR/performance-dqn-records"
+# rm -rf "$TRAIN_DIR/temp-model-store"
+# rm -rf "$TRAIN_DIR/performance-dqn-records"
 # rm -rf "$TRAIN_DIR/temp-array-store"
 rm -rf "$TRAIN_DIR/workbench"
 
@@ -65,8 +65,8 @@ rm -rf "$TRAIN_DIR/workbench"
 
 # mkdir "$TRAIN_DIR/temp-array-store"
 # mkdir "$TRAIN_DIR/performance-records"
-mkdir "$TRAIN_DIR/temp-model-store"
-mkdir "$TRAIN_DIR/performance-dqn-records"
+# mkdir "$TRAIN_DIR/temp-model-store"
+# mkdir "$TRAIN_DIR/performance-dqn-records"
 mkdir "$TRAIN_DIR/workbench"
 
 
@@ -90,26 +90,26 @@ mkdir "$TRAIN_DIR/workbench"
     
 # sed -i "s/EnumValue (myAdrComponent::$rladr_algorithm)/EnumValue (myAdrComponent::PLACEHOLDER)/g" /home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/lorawan/model/my-adr-component.cc
 
-    # DQN训练
-perf=0
-maxperf=0
-sed -i "s/PLACEHOLDER/$rladr_algorithm/g" /home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/lorawan/model/my-adr-component.cc
+#     # DQN训练
+# perf=0
+# maxperf=0
+# sed -i "s/PLACEHOLDER/$rladr_algorithm/g" /home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/lorawan/model/my-adr-component.cc
 
-echo -e "${BLUE}Starting DQN training for $node_count nodes...${NC}"
-i=0
-while [ $i -lt $training_dqn_rounds ]; do
-    cd /home/zhou/tarballs/ns-3-allinone/ns-3.37 || exit 1
-    ./ns3 run "my-complete-network-example --training=true --rlagent=4 --nDevices=200 enableCRDSA=true --gamma=0.7 --epsilon=0.9 --alpha=0.8" | grep Result | tr '\n' '\0' | awk -F" " {'print $6'} > $TRAIN_DIR/performance-dqn-records/perf-$i; perf=`cat $TRAIN_DIR/performance-dqn-records/perf-$i`;
+# echo -e "${BLUE}Starting DQN training for $node_count nodes...${NC}"
+# i=0
+# while [ $i -lt $training_dqn_rounds ]; do
+#     cd /home/zhou/tarballs/ns-3-allinone/ns-3.37 || exit 1
+#     ./ns3 run "my-complete-network-example --training=true --rlagent=4 --nDevices=200 enableCRDSA=true --gamma=0.7 --epsilon=0.9 --alpha=0.8" | grep Result | tr '\n' '\0' | awk -F" " {'print $6'} > $TRAIN_DIR/performance-dqn-records/perf-$i; perf=`cat $TRAIN_DIR/performance-dqn-records/perf-$i`;
         
-    if [ $(echo "$perf >= $maxperf" | bc -l) ]; then
-        maxperf=$perf
-        cp $TRAIN_DIR/model-store $TRAIN_DIR/label-store $TRAIN_DIR/memory-store $TRAIN_DIR/temp-model-store/
-    fi
-        let "i = $i + 1"
-done
+#     if [ $(echo "$perf >= $maxperf" | bc -l) ]; then
+#         maxperf=$perf
+#         cp $TRAIN_DIR/model-store $TRAIN_DIR/label-store $TRAIN_DIR/memory-store $TRAIN_DIR/temp-model-store/
+#     fi
+#         let "i = $i + 1"
+# done
     
-    # 恢复ADR算法占位符
-sed -i "s/EnumValue (myAdrComponent::$rladr_algorithm)/EnumValue (myAdrComponent::PLACEHOLDER)/g" /home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/lorawan/model/my-adr-component.cc
+#     # 恢复ADR算法占位符
+# sed -i "s/EnumValue (myAdrComponent::$rladr_algorithm)/EnumValue (myAdrComponent::PLACEHOLDER)/g" /home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/lorawan/model/my-adr-component.cc
 
 # 节点数量测试循环
 for node_count in "${NODE_COUNTS[@]}"; do
@@ -139,7 +139,7 @@ for node_count in "${NODE_COUNTS[@]}"; do
         i=0
         while [ $i -lt $context_max_rounds ]; do
             cd /home/zhou/tarballs/ns-3-allinone/ns-3.37 || exit 1
-            ./ns3 run "contrib/lorawan/examples/my-complete-network-example --rlagent=$rladr_mode --radius=$context_buildings_radius --nDevices=$node_count --simulationTime=$training_round_time --training=false --gamma=$rladr_gamma --epsilon=$rladr_epsilon --alpha=$rladr_alpha --pkgbasesize=$context_pkg_size --enableCRDSA=$crdsa_enabled" | grep Result > $TRAIN_DIR/workbench/round-$i
+            ./ns3 run "contrib/lorawan/examples/my-complete-network-example --rlagent=$rladr_mode --radius=$context_buildings_radius --nDevices=$node_count --simulationTime=$training_round_time --training=false --gamma=$rladr_gamma --epsilon=$rladr_epsilon --alpha=$rladr_alpha --pkgbasesize=$context_pkg_size --enableCRDSA=$crdsa_enabled --movementMode=cluetered" | grep Result > $TRAIN_DIR/workbench/round-$i
             goodput=`cat $TRAIN_DIR/workbench/round-$i | cut -d" " -f6`
             energy=`cat $TRAIN_DIR/workbench/round-$i | cut -d" " -f5`
             
@@ -193,8 +193,7 @@ for node_count in "${NODE_COUNTS[@]}"; do
         --current_nodes "$node_count" \
         --plot_dir "$MAIN_OUTPUT_DIR/live_plot1.png" 2>&1 | tee -a "$MAIN_OUTPUT_DIR/plot_log.txt" || echo -e "${YELLOW}绘图更新跳过${NC}"
 
-    # 复制配置文件
-    cp $TRAIN_DIR/buildings.txt $TRAIN_DIR/arguments.yml /home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/movingGateway/CPLEX/nodes.csv $OUTPUT_DIR/
+
 done
 
 # 生成综合比较图表
