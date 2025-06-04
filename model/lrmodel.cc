@@ -228,7 +228,7 @@ int chose_action(int nodeid)
 			std::cerr<<"=======decisionmaker======="<<std::endl;
 			Py_SetPythonHome(L"/home/ubuntu/anaconda3/envs/dl");
 			// PyThreadState *statepy = Py_NewInterpreter();
-			Py_Initialize();// 初始化Python解释器
+			// Py_Initialize();// 初始化Python解释器
 			std::cerr<<"python opened!!!!!!!!!!"<<std::endl;
 			PyRun_SimpleString("import sys\n"
 				"sys.path.append('/home/ubuntu/zxq/ns-allinone-3.37/ns-3.37/contrib/lorawan/model/')");
@@ -253,7 +253,7 @@ int chose_action(int nodeid)
 	  		trialdevices[nodeid].random_selection = false;
 			std::cerr<<"Chosen action "<< chosen << " SF "<< sf_from_action(chosen) << " Tx  " << tx_from_action(chosen)  <<std::endl;
 			// Py_Finalize();		 //解释器释
-			std::cerr<<Py_FinalizeEx()<<std::endl;
+			// std::cerr<<Py_FinalizeEx()<<std::endl;
 			// Py_EndInterpreter(statepy);
 			std::cerr<<"python closed!!!!!!!!!!"<<std::endl;	
 		}
@@ -351,7 +351,7 @@ void rlprocess(int nodeid, int rectype, uint8_t received_sf, double received_tx)
 				std::cerr<<"Supposedly running DQN training "<<std::endl; 
 				Py_SetPythonHome(L"/home/ubuntu/anaconda3/envs/dl");
 				// PyThreadState *statepy = Py_NewInterpreter();
-				Py_Initialize();  //// 初始化Python解释器
+				// Py_Initialize();  //// 初始化Python解释器
 				std::cerr<<"python opened!!!!!!!!!!"<<std::endl;
 				PyRun_SimpleString("import sys\n"
 					"sys.path.append('/home/ubuntu/zxq/ns-allinone-3.37/ns-3.37/contrib/lorawan/model/')");
@@ -377,7 +377,7 @@ void rlprocess(int nodeid, int rectype, uint8_t received_sf, double received_tx)
 					PyObject *arg_bellman = Py_BuildValue("(iiif)",state1,state2,act1,trialdevices[nodeid].reward_total_ii);	
 					PyObject_CallObject(func,arg_bellman);
 				}
-				std::cerr<<Py_FinalizeEx()<<std::endl;
+				// std::cerr<<Py_FinalizeEx()<<std::endl;
 				// Py_EndInterpreter(statepy);
 				std::cerr<<"python closed!!!!!!!!!!"<<std::endl;
 			}

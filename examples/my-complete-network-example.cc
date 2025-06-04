@@ -52,7 +52,12 @@
  #include "ns3/my-adr-component.h"
 #include <ns3/three-gpp-propagation-loss-model.h>
 
-// #include <Python.h>
+#include "ns3/constant-position-mobility-model.h" // 静态模型
+#include "ns3/random-walk-2d-mobility-model.h"    // 随机移动
+#include "ns3/waypoint-mobility-model.h"         // 路径点移动
+
+#include <Python.h> // //
+#include <stdexcept> ////
 
 //****tests
 
@@ -63,25 +68,42 @@ using namespace lorawan;
 NS_OBJECT_ENSURE_REGISTERED(myAdrComponent);
 NS_LOG_COMPONENT_DEFINE ("myComplexLorawanNetworkExample");
 
+class PythonInterpreter {
+public:
+    static void Initialize() {
+        if (!Py_IsInitialized()) {
+            Py_Initialize();
+            PyEval_InitThreads();  // 启用多线程支持
+            // 设置Python路径（全局生效）
+            PyRun_SimpleString("import sys");
+            PyRun_SimpleString("sys.path.append('/home/ubuntu/zxq/ns-allinone-3.37/ns-3.37/contrib/lorawan/model')");
+        }
+    }
+       static void Finalize() {
+        if (Py_IsInitialized()) {
+            Py_Finalize();
+        }
+    }
+};
+
 //****************tests
 std::string adrType = "ns3::myAdrComponent";
 
 //****************tests
 
 // Network settings
-//tests taking nDevices to idxnodes
-//int nDevices = 38;
+
 //tests taking nDevices to idxnodes
 int nGateways = 1;
 double radius = 7500;
 
-double simulationTime = 7200;// 仿真时间 ,6h，36个周期（至少包含 10个应用周期—）
+double simulationTime = 43200;// 仿真时间 ,6h，36个周期（至少包含 10个应用周期—）
 
 // Channel model
 //bool realisticChannelModel = false;
 bool realisticChannelModel = true;
 
-int appPeriodSeconds = 300; //应用周期,需符合 LoRaWAN 占空比限制（如EU868频段通常≤1%）,单节点占空比 = (包空中时间) / appPeriod ≤ 1%
+int appPeriodSeconds = 600; //应用周期,需符合 LoRaWAN 占空比限制（如EU868频段通常≤1%）,单节点占空比 = (包空中时间) / appPeriod ≤ 1%
 //改成600
 
 // Output control
@@ -138,7 +160,7 @@ void SaveQ (double **Q)
 //// Loads array.txt file from disk to continue feeding the Q matrix
 void LoadQ(double **Q)
 {
-      NS_LOG_FUNCTION_NOARGS();
+
 	    std::ifstream file("/home/ubuntu/zxq/NS3-LoraRL/rladr-lorans3/automation-interface/array.txt");
 	    if(file.is_open())
 	    {
@@ -187,8 +209,8 @@ void LoadQ(double **Q)
 int
 main (int argc, char *argv[])
 {
-  // Py_SetPythonHome(L"/home/ubuntu/anaconda3/envs/dl");
-  // Py_Initialize();
+  // 初始化Python解释器（整个程序生命周期一次）
+  PythonInterpreter::Initialize();
 
   CommandLine cmd;
   bool enableCRDSA = false;
@@ -208,7 +230,9 @@ main (int argc, char *argv[])
   cmd.AddValue ("alpha", "RL Alpha value", ALPHA);  // 学习率
   cmd.AddValue ("gamma", "RL Gamma value", GAMMA);  // 折扣因子
   cmd.AddValue ("epsilon", "RL epsilon value", EPS);  //// 探索率
- 
+
+ std::string movementMode = "static"; // 默认静态
+ cmd.AddValue("movementMode", "Node movement pattern (static/dispersed/clustered)", movementMode);
 
   //** tests
   cmd.Parse (argc, argv);
@@ -239,10 +263,10 @@ main (int argc, char *argv[])
   Time appPeriod = Seconds (appPeriodSeconds);
 
   // Mobility
-  MobilityHelper mobility;
-  mobility.SetPositionAllocator ("ns3::UniformDiscPositionAllocator", "rho", DoubleValue (radius),
-                                 "X", DoubleValue (0.0), "Y", DoubleValue (0.0));
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  // MobilityHelper mobility;
+  // mobility.SetPositionAllocator ("ns3::UniformDiscPositionAllocator", "rho", DoubleValue (radius),
+  //                                "X", DoubleValue (0.0), "Y", DoubleValue (0.0));
+  // mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 
   /************************
    *  Create the channel  *
@@ -265,12 +289,6 @@ main (int argc, char *argv[])
       Ptr<BuildingPenetrationLoss> buildingLoss = CreateObject<BuildingPenetrationLoss> ();
       shadowing->SetNext (buildingLoss);
 
-      // //添加瑞利衰落模型
-      // Ptr<ThreeGppRmaPropagationLossModel> rayleighFading = CreateObject<ThreeGppRmaPropagationLossModel>();
-      // rayleighFading->SetAttribute("ShadowingEnabled", BooleanValue(false)); // 禁用阴影衰落，因为我们已经有独立的阴影模型
-      // //rayleighFading->SetAttribute("FadingModel", StringValue("RAYLEIGH")); // 设置瑞利衰落
-    
-      // buildingLoss->SetNext(rayleighFading); // 将瑞利衰落添加到模型链末尾
     }
 
   Ptr<PropagationDelayModel> delay = CreateObject<ConstantSpeedPropagationDelayModel> ();
@@ -308,83 +326,150 @@ main (int argc, char *argv[])
   endDevices.Create (nDevices);
 
   // Assign a mobility model to each node
-  mobility.Install (endDevices);
+  // mobility.Install (endDevices);//删掉的
 
   // Make it so that nodes are at a certain height > 0
   
   //***tests start
  
-  std::fstream nds;
-   nds.open("/home/ubuntu/zxq/NS3-LoraRL/movingGateway/CPLEX/nodes.csv",std::ios::in);
-   //nds.open("/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/movingGateway/CPLEX/nodes.csv",std::ios::in);
-////"/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/rladr-lorans3/automation-interface/nodes.csv"
-  std::cerr<<"ndevice= "<<nDevices<<std::endl;
+//   std::fstream nds;
+//    nds.open("/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/movingGateway/CPLEX/nodes.csv",std::ios::in);
+//    //nds.open("/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/movingGateway/CPLEX/nodes.csv",std::ios::in);
+// ////"/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/rladr-lorans3/automation-interface/nodes.csv"
+//   std::cerr<<"ndevice= "<<nDevices<<std::endl;
 
-   if (nds.is_open())
-   {
-      std::cerr << "可以打开nodes.csv文件" << std::endl;
-      std::string tp;
-      std::vector<std::string> row;
-      std::string word;
-      int loaded_nodes = 0;  //new
+//    if (nds.is_open())
+//    {
+//       std::cerr << "可以打开nodes.csv文件" << std::endl;
+//       std::string tp;
+//       std::vector<std::string> row;
+//       std::string word;
+//       int loaded_nodes = 0;  //new
 
-      while(getline(nds, tp)&& loaded_nodes < nDevices) //// 仅读取前 nDevices 行
-      {
-        std::cout <<"行内容："<< tp << std::endl;
-	      std::stringstream s(tp);
-                while (getline(s, word, ','))
-                {
-                row.push_back(word);
-                }
-                loaded_nodes++;
+//       while(getline(nds, tp)&& loaded_nodes < nDevices) //// 仅读取前 nDevices 行
+//       {
+//         std::cout <<"行内容："<< tp << std::endl;
+// 	      std::stringstream s(tp);
+//                 while (getline(s, word, ','))
+//                 {
+//                 row.push_back(word);
+//                 }
+//                 loaded_nodes++;
 
-      }
-      nds.close();  //new
-      std::cerr << row.size()<<std::endl;
-      //Confirming that the CSV has been imported in a multiple of 3 (which follows the expected format)
-      if( ((row.size())%3) != 0 || ( (int(row.size()/3)) != nDevices ) )
-        {
-		std::cerr << "There is a problem with the nodes CSV input. Please, re-validate it!\n";
-		std::exit(-1);
-        }
+//       }
+//       nds.close();  //new
+//       std::cerr << row.size()<<std::endl;
+//       //Confirming that the CSV has been imported in a multiple of 3 (which follows the expected format)
+//       if( ((row.size())%3) != 0 || ( (int(row.size()/3)) != nDevices ) )
+//         {
+// 		std::cerr << "There is a problem with the nodes CSV input. Please, re-validate it!\n";
+// 		std::exit(-1);
+//         }
 
-      //Print out the number of nodes
-      std::cerr<<"The number of nodes is "<< (row.size()+1)/3  <<std::endl;
+//       //Print out the number of nodes
+//       std::cerr<<"The number of nodes is "<< (row.size()+1)/3  <<std::endl;
 
-      
-      
-      //Prepare to create nodes
-      NodeContainer::Iterator j = endDevices.Begin ();
-      Ptr<Node> node = *j;
-      Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
-      Vector position = mobility->GetPosition ();
 
-      //Reading the coordinates of each node (every 3 elements)
-      for (std::size_t i = 0; i < row.size(); i=i+3)
-              {
+//       //Prepare to create nodes
+//       NodeContainer::Iterator j = endDevices.Begin ();
+//       Ptr<Node> node = *j;
+//       Ptr<MobilityModel> mobility = (*j)->GetObject<MobilityModel> ();
+//       Vector position = mobility->GetPosition ();
+
+//       //Reading the coordinates of each node (every 3 elements)
+//       for (std::size_t i = 0; i < row.size(); i=i+3)
+//               {
         	
-        	mobility = (*j)->GetObject<MobilityModel> ();
-        	position = mobility->GetPosition ();
+//         	mobility = (*j)->GetObject<MobilityModel> ();
+//         	position = mobility->GetPosition ();
         	
-		      position.x=std::stod(row[i]);
-        	position.y=std::stod(row[i+1]);
-        	position.z=std::stod(row[i+2]);
+// 		      position.x=std::stod(row[i]);
+//         	position.y=std::stod(row[i+1]);
+//         	position.z=std::stod(row[i+2]);
 
-        	mobility->SetPosition (position);
-        	trialdevices[node->GetId()].distance=sqrt((pow(position.x,2)+(pow(position.y,2))));
-        	std::cout<<"distance "<<trialdevices[node->GetId()].distance<<" node->GetId() "<< node->GetId() <<std::endl;
-        	double avgDistance = (avgDistance + trialdevices[node->GetId()].distance);
+//         	mobility->SetPosition (position);
+//         	trialdevices[node->GetId()].distance=sqrt((pow(position.x,2)+(pow(position.y,2))));
+//         	std::cout<<"distance "<<trialdevices[node->GetId()].distance<<" node->GetId() "<< node->GetId() <<std::endl;
+//         	double avgDistance = (avgDistance + trialdevices[node->GetId()].distance);
  		
-		if (i < (row.size()-3) )
-		{
-			j++;
-			node = *j;
-		}
+// 		if (i < (row.size()-3) )
+// 		{
+// 			j++;
+// 			node = *j;
+// 		}
 
-	      }
-      nds.close();
-   }
+// 	      }
+//       nds.close();
+//    }
 
+
+//***add mobility nodes
+
+// 替换原有的静态加载代码
+// MobilityHelper mobility;
+
+MobilityHelper mobility;
+
+
+if (movementMode == "dispersed") {
+    // 离散模式
+    mobility.SetPositionAllocator(
+        "ns3::UniformDiscPositionAllocator",
+        "X", StringValue("0.0"),
+        "Y", StringValue("0.0"),
+        "rho", StringValue("6000.0"));  // 半径300米
+
+        mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    
+    // mobility.SetMobilityModel(
+    //     "ns3::RandomWalk2dMobilityModel",
+    //     "Bounds", RectangleValue(Rectangle(0, 600, 0, 600)),  // 边界600x600米
+    //     "Distance", DoubleValue(50),  // 每次移动50米
+    //     "Speed", StringValue("ns3::UniformRandomVariable[Min=5|Max=10]"));
+}
+else if (movementMode == "clustered") {
+    // 聚集模式 - 仅设置模型类型
+    // mobility.SetMobilityModel("ns3::WaypointMobilityModel",
+    //                         "InitialPositionIsWaypoint", BooleanValue(true));
+       // 使用固定位置模型
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+}
+
+// 统一安装移动模型
+mobility.Install(endDevices);
+
+// 如果是聚集模式，后添加路径点
+if (movementMode == "clustered") {
+    const uint32_t numClusters = std::max(1, 3); // 簇的数量（可调整）
+    const double clusterRadius = 300.0;  // 总分布半径
+    const double clusterSpread = 30.0;  //// 每个簇的分布半径（节点在簇中心附近100米内）
+
+    // 生成簇中心...  // 1. 为每个簇随机生成中心坐标（均匀分布在6000米半径范围内）
+    std::vector<Vector> clusterCenters(numClusters);
+    Ptr<UniformRandomVariable> rand = CreateObject<UniformRandomVariable>();
+    for (uint32_t c = 0; c < numClusters; ++c) {
+        double angle = rand->GetValue(0, 2 * M_PI);  // 随机角度
+        double distance = rand->GetValue(0, clusterRadius);  // 随机半径
+        clusterCenters[c] = Vector(distance * cos(angle), distance * sin(angle), 0);
+    }
+
+ 
+    // mobility.Install(endDevices);
+
+    // 分配静态位置
+    for (uint32_t i = 0; i < endDevices.GetN(); ++i) {
+        Ptr<ConstantPositionMobilityModel> mob = 
+            endDevices.Get(i)->GetObject<ConstantPositionMobilityModel>();
+        NS_ASSERT_MSG(mob != nullptr, "Failed to get mobility model");
+        
+        uint32_t clusterId = i % numClusters;
+        Vector center = clusterCenters[clusterId];
+        
+        double angle = rand->GetValue(0, 2 * M_PI);
+        double r = rand->GetValue(0, clusterSpread);
+        mob->SetPosition(Vector(center.x + r*cos(angle), center.y + r*sin(angle), 0));
+    }
+}
  
   //***tests
   double avgDistance = (avgDistance/nDevices);
@@ -544,7 +629,7 @@ for (uint32_t i = 0; i < gateways.GetN(); ++i) {
   if (print)
     {
       std::ofstream myfile;
-      myfile.open ("/home/ubuntu/zxq/NS3-LoraRL/rladr-lorans3/automation-interface/buildings.txt");
+      myfile.open ("/home/zhou/tarballs/ns-3-allinone/ns-3.37/contrib/NS3-LoraRL/rladr-lorans3/automation-interface/buildings.txt");
       if (myfile.is_open())
    {
       std::cerr << "可以打开buildings.txt文件" << std::endl;
@@ -701,6 +786,7 @@ for (uint32_t i = 0; i < gateways.GetN(); ++i) {
   ///***tests
   //PrintNodes(nDevices);
   ///***tests
-  // Py_FinalizeEx();
+  // 程序退出前清理（可选，系统会自动清理）
+ PythonInterpreter::Finalize();
   return 0;
 }
