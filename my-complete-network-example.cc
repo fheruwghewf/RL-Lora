@@ -95,15 +95,15 @@ std::string adrType = "ns3::myAdrComponent";
 
 //tests taking nDevices to idxnodes
 int nGateways = 1;
-double radius = 7500;
+double radius = 6000;
 
-double simulationTime = 43200;// 仿真时间 ,6h，36个周期（至少包含 10个应用周期—）
+double simulationTime = 14400;// 仿真时间 ,6h，36个周期（至少包含 10个应用周期—）
 
 // Channel model
 //bool realisticChannelModel = false;
 bool realisticChannelModel = true;
 
-int appPeriodSeconds = 600; //应用周期,需符合 LoRaWAN 占空比限制（如EU868频段通常≤1%）,单节点占空比 = (包空中时间) / appPeriod ≤ 1%
+int appPeriodSeconds = 660; //应用周期,需符合 LoRaWAN 占空比限制（如EU868频段通常≤1%）,单节点占空比 = (包空中时间) / appPeriod ≤ 1%
 //改成600
 
 // Output control
@@ -421,56 +421,98 @@ if (movementMode == "dispersed") {
 
         mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
     
-    // mobility.SetMobilityModel(
-    //     "ns3::RandomWalk2dMobilityModel",
-    //     "Bounds", RectangleValue(Rectangle(0, 600, 0, 600)),  // 边界600x600米
-    //     "Distance", DoubleValue(50),  // 每次移动50米
-    //     "Speed", StringValue("ns3::UniformRandomVariable[Min=5|Max=10]"));
+// 使用RandomWalk2dMobilityModel
+       mobility.SetMobilityModel(
+        "ns3::RandomWalk2dMobilityModel",
+        "Bounds", RectangleValue(Rectangle(-6000, 6000, -6000, 6000)),  // 匹配6000米半径
+        "Mode", StringValue("Time"),
+        // "Distance", DoubleValue(50),  // 每次移动距离（米）
+        "Time", StringValue("1s"),       // 每1秒改变方向
+        "Speed", StringValue("ns3::UniformRandomVariable[Min=0.5|Max=1.5]")  // 移动速度（m/s）
+       );
+
+       
+
+       // 统一安装移动模型
+mobility.Install(endDevices);
 }
 else if (movementMode == "clustered") {
     // 聚集模式 - 仅设置模型类型
     // mobility.SetMobilityModel("ns3::WaypointMobilityModel",
     //                         "InitialPositionIsWaypoint", BooleanValue(true));
        // 使用固定位置模型
-    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-}
+    // mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    const uint32_t numClusters = std::max(15, (int)nDevices/100);
+    const double clusterRadius = 6000.0;
+    const double clusterSpread = 50.0;
 
-// 统一安装移动模型
-mobility.Install(endDevices);
-
-// 如果是聚集模式，后添加路径点
-if (movementMode == "clustered") {
-    const uint32_t numClusters = std::max(1, 3); // 簇的数量（可调整）
-    const double clusterRadius = 300.0;  // 总分布半径
-    const double clusterSpread = 30.0;  //// 每个簇的分布半径（节点在簇中心附近100米内）
-
-    // 生成簇中心...  // 1. 为每个簇随机生成中心坐标（均匀分布在6000米半径范围内）
+    // 生成簇中心
     std::vector<Vector> clusterCenters(numClusters);
     Ptr<UniformRandomVariable> rand = CreateObject<UniformRandomVariable>();
     for (uint32_t c = 0; c < numClusters; ++c) {
-        double angle = rand->GetValue(0, 2 * M_PI);  // 随机角度
-        double distance = rand->GetValue(0, clusterRadius);  // 随机半径
+        double angle = rand->GetValue(0, 2 * M_PI);
+        double distance = rand->GetValue(0, clusterRadius);
         clusterCenters[c] = Vector(distance * cos(angle), distance * sin(angle), 0);
     }
 
- 
-    // mobility.Install(endDevices);
+    // 配置随机游走模型
+    mobility.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
+        "Mode", StringValue("Time"),
+        "Time", StringValue("1s"),       // 每1秒改变方向
+        "Speed", StringValue("ns3::UniformRandomVariable[Min=0.5|Max=1.5]"),
+        "Bounds", RectangleValue(
+            Rectangle(-clusterRadius, clusterRadius, -clusterRadius, clusterRadius)));
 
-    // 分配静态位置
+    // 安装模型并设置初始位置
+    mobility.Install(endDevices);
     for (uint32_t i = 0; i < endDevices.GetN(); ++i) {
-        Ptr<ConstantPositionMobilityModel> mob = 
-            endDevices.Get(i)->GetObject<ConstantPositionMobilityModel>();
-        NS_ASSERT_MSG(mob != nullptr, "Failed to get mobility model");
-        
         uint32_t clusterId = i % numClusters;
         Vector center = clusterCenters[clusterId];
-        
         double angle = rand->GetValue(0, 2 * M_PI);
         double r = rand->GetValue(0, clusterSpread);
-        mob->SetPosition(Vector(center.x + r*cos(angle), center.y + r*sin(angle), 0));
+        Ptr<MobilityModel> mob = endDevices.Get(i)->GetObject<MobilityModel>();
+        mob->SetPosition(Vector(
+            center.x + r*cos(angle),
+            center.y + r*sin(angle),
+            0));
     }
 }
+
+
+// // 如果是聚集模式，后添加路径点
+// if (movementMode == "clustered") {
+//     const uint32_t numClusters = std::max(15, (int)nDevices/200); // 簇的数量（可调整）
+//     const double clusterRadius = 6000.0;  // 总分布半径
+//     const double clusterSpread = 200.0;  //// 每个簇的分布半径（节点在簇中心附近100米内）
+//     // 生成簇中心...  // 1. 为每个簇随机生成中心坐标（均匀分布在6000米半径范围内）
+//     std::vector<Vector> clusterCenters(numClusters);
+//     Ptr<UniformRandomVariable> rand = CreateObject<UniformRandomVariable>();
+//     for (uint32_t c = 0; c < numClusters; ++c) {
+//         double angle = rand->GetValue(0, 2 * M_PI);  // 随机角度
+//         double distance = rand->GetValue(0, clusterRadius);  // 随机半径
+//         clusterCenters[c] = Vector(distance * cos(angle), distance * sin(angle), 0);
+//     }
+
+//     // mobility.Install(endDevices);
+
+//     // 分配静态位置
+//     for (uint32_t i = 0; i < endDevices.GetN(); ++i) {
+//         Ptr<ConstantPositionMobilityModel> mob = 
+//             endDevices.Get(i)->GetObject<ConstantPositionMobilityModel>();
+//         NS_ASSERT_MSG(mob != nullptr, "Failed to get mobility model");
+        
+//         uint32_t clusterId = i % numClusters;
+//         Vector center = clusterCenters[clusterId];
+        
+//         double angle = rand->GetValue(0, 2 * M_PI);
+//         double r = rand->GetValue(0, clusterSpread);
+//         mob->SetPosition(Vector(center.x + r*cos(angle), center.y + r*sin(angle), 0));
+//     }
+// }
  
+
+
+
   //***tests
   double avgDistance = (avgDistance/nDevices);
   //*****tests
